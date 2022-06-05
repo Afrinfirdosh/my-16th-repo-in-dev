@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns:db="http://www.mulesoft.org/schema/mule/db"
+	xmlns:http="http://www.mulesoft.org/schema/mule/http"
+	xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/db http://www.mulesoft.org/schema/mule/db/current/mule-db.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+	<db:config name="Database_Config" doc:name="Database Config" doc:id="a74ef51b-f0eb-493a-9439-28422d16b401" >
+		<db:my-sql-connection host="localhost" port="3306" user="root" password="root@12345" database="world" />
+	</db:config>
+	<http:listener-config name="HTTP_Listener_config" doc:name="HTTP Listener config" doc:id="3787c746-0824-4b25-a6ee-e3626b438208" >
+		<http:listener-connection host="0.0.0.0" port="8081" />
+	</http:listener-config>
+	<flow name="transactionpoc2Flow" doc:id="02ae761e-a919-4123-917c-e613f27018d1" >
+		<http:listener doc:name="Listener" doc:id="0bd9f933-deb8-48fe-8c41-df180932f153" config-ref="HTTP_Listener_config" path="/trans"/>
+		<logger level="INFO" doc:name="Logger" doc:id="44133c1f-e3a6-4ac4-a9b6-b9bf3830125f" message="#[payload]"/>
+		<try doc:name="Try" doc:id="48b04d16-c066-4d44-af08-644432925174" transactionalAction="ALWAYS_BEGIN">
+			<db:insert doc:id="10135488-ad51-4c3f-a8f2-0e1ed4dfc182" config-ref="Database_Config" transactionalAction="ALWAYS_JOIN">
+				<db:sql ><![CDATA[insert into t1 values(2,"Anwar")]]></db:sql>
+			</db:insert>
+			<ee:transform doc:name="Transform Message" doc:id="589804bb-98e3-4938-9d59-368b38139c65" >
+				<ee:message >
+					<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+"hello"]]></ee:set-payload>
+				</ee:message>
+			</ee:transform>
+			<error-handler >
+				<on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="2992c325-369c-430e-87d6-8e37ee0f390b" >
+					<logger level="INFO" doc:name="Logger" doc:id="834ff9b9-69ba-45e4-8ef9-b79d28e9416b" />
+				</on-error-propagate>
+			</error-handler>
+		</try>
+	</flow>
+</mule>
